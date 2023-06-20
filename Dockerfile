@@ -7,4 +7,4 @@ WORKDIR /app
 COPY . /app
 RUN pip install /app
 
-CMD [ "neon-llm-chatgpt" ]
+CMD [ "neon-llm-fastchat" ]

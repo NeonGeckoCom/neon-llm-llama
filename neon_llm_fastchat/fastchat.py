@@ -24,40 +24,53 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import openai
+import ctranslate2
+from transformers import T5Tokenizer
+from huggingface_hub import snapshot_download
 
 
-class ChatGPT:
+class FastChat:
     def __init__(self, config):
         self.model = config["model"]
-        self.role = config["role"]
         self.context_depth = config["context_depth"]
         self.max_tokens = config["max_tokens"]
-        openai.api_key = config["key"]
+        self.init_model()
+
+    def init_model(self):
+        repo_path = snapshot_download(repo_id="neongeckocom/fastchat-t5-3b-v1.0")
+        self.model = ctranslate2.Translator(repo_path, intra_threads=2, inter_threads=2)
+        self.tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-xl")
+        self.system_message = "A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.\n### Human: What are the key differences between renewable and non-renewable energy sources?\n### Assistant: Renewable energy sources are those that can be replenished naturally in a relatively short amount of time, such as solar, wind, hydro, geothermal, and biomass. Non-renewable energy sources, on the other hand, are finite and will eventually be depleted, such as coal, oil, and natural gas.\n"
 
     @staticmethod
     def convert_role(role):
         if role == "user":
-            role_chatgpt = "user"
+            role_fastchat = "Human"
         elif role == "llm":
-            role_chatgpt = "assistant"
-        return role_chatgpt
+            role_fastchat = "Assistant"
+        return role_fastchat
 
     def ask(self, message, chat_history):
-        messages = [
-            {"role": "system", "content": self.role},
-        ]
+        prompt = self.system_message
         # Context N messages
         for role, content in chat_history[-self.context_depth:]:
-            role_chatgpt = self.convert_role(role)
-            messages.append({"role": role_chatgpt, "content": content})
-        messages.append({"role": "user", "content": message})
+            role_fastchat = self.convert_role(role)
+            prompt += f"### {role_fastchat}: {content}\n"
+        prompt += f"### Human: {message}\n### Assistant:"
         
-        response = openai.ChatCompletion.create(
-            model=self.model,
-            messages=messages,
-            temperature=0,
-            max_tokens=self.max_tokens,
-        )
-        bot_message = response.choices[0].message['content']
+        bot_message = self.call_model(prompt)
         return bot_message
+
+    def call_model(self, prompt):
+        tokens = self.tokenizer.convert_ids_to_tokens(self.tokenizer.encode(prompt))
+
+        results = self.model.translate_batch(
+            [tokens],
+            beam_size=1,
+            max_decoding_length = self.max_tokens,
+            repetition_penalty = 1.2,
+        )
+
+        output_tokens = results[0].hypotheses[0]
+        text = self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(output_tokens), spaces_between_special_tokens=False)
+        return text

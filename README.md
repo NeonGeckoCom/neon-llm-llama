@@ -1,5 +1,5 @@
-# NeonAI LLM ChatGPT
-Proxies API calls to ChatGPT.
+# NeonAI LLM FastChat
+Proxies API calls to FastChat.
 
 ## Request Format
 API requests should include `history`, a list of tuples of strings, and the current
@@ -25,20 +25,18 @@ MQ:
   port: <MQ Port>
   server: <MQ Hostname or IP>
   users:
-    mq-chatgpt-api:
-      password: <neon_chatgpt user's password>
-      user: neon_chatgpt
-ChatGPT:
-  key: ""
-  model: "gpt-3.5-turbo"
-  role: "You are trying to give a short answer in less than 40 words."
+    mq-fastchat-api:
+      password: <neon_fastchat user's password>
+      user: neon_fastchat
+FastChat:
+  model: "fastchat"
   context_depth: 3
-  max_tokens: 100
+  max_tokens: 256
 ```
 
 For example, if your configuration resides in `~/.config`:
 ```shell
 export CONFIG_PATH="/home/${USER}/.config"
-docker run -v ${CONFIG_PATH}:/config neon_llm_chatgpt
+docker run -v ${CONFIG_PATH}:/config neon_llm_fastchat
 ```
 > Note: If connecting to a local MQ server, you may need to specify `--network host`

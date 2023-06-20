@@ -31,26 +31,26 @@ from neon_mq_connector.utils.network_utils import dict_to_b64
 from neon_mq_connector.utils.rabbit_utils import create_mq_callback
 from ovos_utils.log import LOG
 
-from neon_llm_chatgpt.chatgpt import ChatGPT
-from neon_llm_chatgpt.config import load_config
+from neon_llm_fastchat.fastchat import FastChat
+from neon_llm_fastchat.config import load_config
 
 
-class ChatgptMQ(MQConnector):
+class FastchatMQ(MQConnector):
     """
     Module for processing MQ requests from PyKlatchat to LibreTranslate"""
 
     def __init__(self):
         config = load_config()
-        chatgpt_config = config.get("ChatGPT", None)
-        self.chatGPT = ChatGPT(chatgpt_config)
+        fastchat_config = config.get("FastChat", None)
+        self.fastChat = FastChat(fastchat_config)
 
-        self.service_name = 'neon_llm_chatgpt'
+        self.service_name = 'neon_llm_fastchat'
 
         mq_config = config.get("MQ", None)
         super().__init__(config=mq_config, service_name=self.service_name)
 
         self.vhost = "/llm"
-        self.queue = "chat_gpt_input"
+        self.queue = "fastchat_input"
         self.register_consumer(name=self.service_name,
                                vhost=self.vhost,
                                queue=self.queue,
@@ -64,8 +64,8 @@ class ChatgptMQ(MQConnector):
                        method: pika.spec.Basic.Return,
                        body: dict):
         """
-        Handles requests from MQ to ChatGPT received on queue
-        "request_chatgpt"
+        Handles requests from MQ to FastChat received on queue
+        "request_fastchat"
 
         :param channel: MQ channel object (pika.channel.Channel)
         :param method: MQ return method (pika.spec.Basic.Return)
@@ -77,7 +77,7 @@ class ChatgptMQ(MQConnector):
         query = body["query"]
         history = body["history"]
 
-        response = self.chatGPT.ask(message=query, chat_history=history)
+        response = self.fastChat.ask(message=query, chat_history=history)
 
         api_response = {
             "message_id": message_id,

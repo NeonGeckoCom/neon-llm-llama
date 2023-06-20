@@ -1,4 +1,8 @@
-openai~=0.27
+# model
+ctranslate2
+transformers
+SentencePiece
+# networking
 neon-mq-connector>=0.6.1a9,~=0.6
 ovos-utils~=0.0.32
 ovos-config~=0.0.8

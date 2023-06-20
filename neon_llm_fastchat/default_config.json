@@ -3,17 +3,15 @@
         "server": "localhost",
         "port": "5672",
         "users": {
-            "mq-chatgpt-api": {
+            "mq-fastchat-api": {
                 "user": "",
                 "password": ""
             }
         }
     },
-    "ChatGPT": {
-        "key": "",
-        "model": "gpt-3.5-turbo",
-        "role": "You are trying to give a short answer in less than 40 words.",
+    "FastChat": {
+        "model": "fastchat",
         "context_depth": 3,
-        "max_tokens": 100
+        "max_tokens": 256
     }
 }
