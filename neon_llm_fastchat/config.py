@@ -35,7 +35,7 @@ def load_config() -> dict:
     """
     Load and return a configuration object,
     """
-    legacy_config_path = "/app/app/config.json"
+    legacy_config_path = "neon_llm_fastchat/default_config.json"
     if isfile(legacy_config_path):
         LOG.warning(f"Deprecated configuration found at {legacy_config_path}")
         with open(legacy_config_path) as f:

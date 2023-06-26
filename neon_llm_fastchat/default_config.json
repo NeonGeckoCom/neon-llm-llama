@@ -3,7 +3,7 @@
         "server": "localhost",
         "port": "5672",
         "users": {
-            "mq-fastchat-api": {
+            "neon_llm_fastchat": {
                 "user": "",
                 "password": ""
             }
@@ -12,6 +12,8 @@
     "FastChat": {
         "model": "fastchat",
         "context_depth": 3,
-        "max_tokens": 256
+        "max_tokens": 256,
+        "num_parallel_processes": 2,
+        "num_threads_per_process": 4
     }
 }

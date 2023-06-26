@@ -34,11 +34,15 @@ class FastChat:
         self.model = config["model"]
         self.context_depth = config["context_depth"]
         self.max_tokens = config["max_tokens"]
+        self.num_parallel_processes = config["num_parallel_processes"]
+        self.num_threads_per_process = config["num_threads_per_process"]
         self.init_model()
 
     def init_model(self):
         repo_path = snapshot_download(repo_id="neongeckocom/fastchat-t5-3b-v1.0")
-        self.model = ctranslate2.Translator(repo_path, intra_threads=2, inter_threads=2)
+        self.model = ctranslate2.Translator(repo_path, 
+                                            intra_threads=self.num_threads_per_process, 
+                                            inter_threads = self.num_parallel_processes)
         self.tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-xl")
         self.system_message = "A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.\n### Human: What are the key differences between renewable and non-renewable energy sources?\n### Assistant: Renewable energy sources are those that can be replenished naturally in a relatively short amount of time, such as solar, wind, hydro, geothermal, and biomass. Non-renewable energy sources, on the other hand, are finite and will eventually be depleted, such as coal, oil, and natural gas.\n"
 

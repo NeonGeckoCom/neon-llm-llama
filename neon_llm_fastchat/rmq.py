@@ -42,6 +42,7 @@ class FastchatMQ(MQConnector):
     def __init__(self):
         config = load_config()
         fastchat_config = config.get("FastChat", None)
+        self.num_processes = fastchat_config["num_parallel_processes"]
         self.fastChat = FastChat(fastchat_config)
 
         self.service_name = 'neon_llm_fastchat'
@@ -51,7 +52,8 @@ class FastchatMQ(MQConnector):
 
         self.vhost = "/llm"
         self.queue = "fastchat_input"
-        self.register_consumer(name=self.service_name,
+        for id in range(self.num_processes):
+            self.register_consumer(name=f"{self.service_name}_{id}",
                                vhost=self.vhost,
                                queue=self.queue,
                                callback=self.handle_request,

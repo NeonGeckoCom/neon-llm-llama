@@ -25,13 +25,15 @@ MQ:
   port: <MQ Port>
   server: <MQ Hostname or IP>
   users:
-    mq-fastchat-api:
+    neon_llm_fastchat:
       password: <neon_fastchat user's password>
       user: neon_fastchat
 FastChat:
   model: "fastchat"
   context_depth: 3
   max_tokens: 256
+  num_parallel_processes: 2
+  num_threads_per_process: 4
 ```
 
 For example, if your configuration resides in `~/.config`:
