@@ -1,0 +1,8 @@
+# model
+ctranslate2
+transformers
+SentencePiece
+# networking
+neon-mq-connector~=0.7
+ovos-utils~=0.0.32
+ovos-config~=0.0.10
