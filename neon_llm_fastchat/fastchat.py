@@ -27,6 +27,7 @@
 import ctranslate2
 from transformers import T5Tokenizer
 from huggingface_hub import snapshot_download
+import numpy as np
 
 
 class FastChat:
@@ -85,3 +86,21 @@ class FastChat:
         output_tokens = results[0].hypotheses[0]
         text = self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(output_tokens), spaces_between_special_tokens=False)
         return text
+
+    def call_score(self, prompt, targets):
+        tokens = self.tokenize(prompt)
+        tokens_list = len(targets) * [tokens]
+
+        target_tokens_list = [self.tokenize(target) for target in targets]
+
+        results = self.model.score_batch(
+            source = tokens_list,
+            target = target_tokens_list,
+        )
+
+        log_probs_list = [result.log_probs for result in results]
+        return log_probs_list
+
+    def compute_ppl(log_probs):
+        ppl = np.exp(-np.mean(log_probs))
+        return ppl
