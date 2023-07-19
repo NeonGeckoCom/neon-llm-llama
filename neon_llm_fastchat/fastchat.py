@@ -68,8 +68,12 @@ class FastChat:
         bot_message = self.call_model(prompt)
         return bot_message
 
-    def call_model(self, prompt):
+    def tokenize(self, prompt):
         tokens = self.tokenizer.convert_ids_to_tokens(self.tokenizer.encode(prompt))
+        return tokens
+
+    def call_model(self, prompt):
+        tokens = self.tokenize(prompt)
 
         results = self.model.translate_batch(
             [tokens],
