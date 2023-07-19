@@ -54,14 +54,17 @@ class FastChat:
             role_fastchat = "Assistant"
         return role_fastchat
 
-    def ask(self, message, chat_history):
+    def assemble_prompt(self, message, chat_history):
         prompt = self.system_message
         # Context N messages
         for role, content in chat_history[-self.context_depth:]:
             role_fastchat = self.convert_role(role)
             prompt += f"### {role_fastchat}: {content}\n"
         prompt += f"### Human: {message}\n### Assistant:"
-        
+        return prompt
+
+    def ask(self, message, chat_history):
+        prompt = self.assemble_prompt(message, chat_history)
         bot_message = self.call_model(prompt)
         return bot_message
 
