@@ -104,3 +104,9 @@ class FastChat:
     def compute_ppl(log_probs):
         ppl = np.exp(-np.mean(log_probs))
         return ppl
+
+    def ppl(self, question, answers):
+        question_prompt = self.assemble_prompt(question, [])
+        log_probs_list = self.call_score(question_prompt, answers)
+        ppl_list = [self.compute_ppl(log_probs) for log_probs in log_probs_list]
+        return ppl_list
