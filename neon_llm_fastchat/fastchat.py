@@ -110,3 +110,8 @@ class FastChat:
         log_probs_list = self.call_score(question_prompt, answers)
         ppl_list = [self.compute_ppl(log_probs) for log_probs in log_probs_list]
         return ppl_list
+    
+    @staticmethod
+    def get_best(ppl_list):
+        best_id = np.argmin(ppl_list)
+        return best_id
