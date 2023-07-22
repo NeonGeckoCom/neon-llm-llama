@@ -60,6 +60,15 @@ class FastchatMQ(MQConnector):
                                on_error=self.default_error_handler,
                                auto_ack=False)
 
+        self.queue_score = "fastchat_score_input"
+        self.service_name_score = 'neon_llm_fastchat_score'
+        self.register_consumer(name=self.service_name_score,
+                               vhost=self.vhost,
+                               queue=self.queue_score,
+                               callback=self.handle_score_request,
+                               on_error=self.default_error_handler,
+                               auto_ack=False)
+
     @create_mq_callback(include_callback_props=('channel', 'method', 'body'))
     def handle_request(self,
                        channel: pika.channel.Channel,
