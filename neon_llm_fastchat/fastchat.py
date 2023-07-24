@@ -101,6 +101,7 @@ class FastChat:
         log_probs_list = [result.log_probs for result in results]
         return log_probs_list
 
+    @staticmethod
     def compute_ppl(log_probs):
         ppl = np.exp(-np.mean(log_probs))
         return ppl
