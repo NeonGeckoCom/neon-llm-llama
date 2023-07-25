@@ -67,6 +67,7 @@ class FastChat:
         return prompt
 
     def ask(self, message: str, chat_history: List[List[str]]) -> str:
+        "Generates llm response based on user message and (user, llm) chat history"
         prompt = self.assemble_prompt(message, chat_history)
         bot_message = self.call_model(prompt)
         return bot_message
@@ -105,6 +106,7 @@ class FastChat:
 
     @staticmethod
     def compute_ppl(log_probs: List[float]) -> float:
+        "Calculates perplexity value based on https://en.wikipedia.org/wiki/Perplexity"
         ppl = np.exp(-np.mean(log_probs))
         return ppl
 
