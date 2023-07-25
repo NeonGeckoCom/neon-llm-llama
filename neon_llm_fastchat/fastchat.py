@@ -24,6 +24,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from typing import List
+
 import ctranslate2
 from transformers import T5Tokenizer
 from huggingface_hub import snapshot_download
@@ -48,14 +50,14 @@ class FastChat:
         self.system_message = "A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.\n### Human: What are the key differences between renewable and non-renewable energy sources?\n### Assistant: Renewable energy sources are those that can be replenished naturally in a relatively short amount of time, such as solar, wind, hydro, geothermal, and biomass. Non-renewable energy sources, on the other hand, are finite and will eventually be depleted, such as coal, oil, and natural gas.\n"
 
     @staticmethod
-    def convert_role(role):
+    def convert_role(role: str) -> str:
         if role == "user":
             role_fastchat = "Human"
         elif role == "llm":
             role_fastchat = "Assistant"
         return role_fastchat
 
-    def assemble_prompt(self, message, chat_history):
+    def assemble_prompt(self, message: str, chat_history: List[List[str]]) -> str:
         prompt = self.system_message
         # Context N messages
         for role, content in chat_history[-self.context_depth:]:
@@ -64,16 +66,16 @@ class FastChat:
         prompt += f"### Human: {message}\n### Assistant:"
         return prompt
 
-    def ask(self, message, chat_history):
+    def ask(self, message: str, chat_history: List[List[str]]) -> str:
         prompt = self.assemble_prompt(message, chat_history)
         bot_message = self.call_model(prompt)
         return bot_message
 
-    def tokenize(self, prompt):
+    def tokenize(self, prompt: str) -> List[str]:
         tokens = self.tokenizer.convert_ids_to_tokens(self.tokenizer.encode(prompt))
         return tokens
 
-    def call_model(self, prompt):
+    def call_model(self, prompt: str) -> str:
         tokens = self.tokenize(prompt)
 
         results = self.model.translate_batch(
@@ -87,7 +89,7 @@ class FastChat:
         text = self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(output_tokens), spaces_between_special_tokens=False)
         return text
 
-    def call_score(self, prompt, targets):
+    def call_score(self, prompt: str, targets: List[str]) -> List[List[float]]:
         tokens = self.tokenize(prompt)
         tokens_list = len(targets) * [tokens]
 
@@ -102,17 +104,17 @@ class FastChat:
         return log_probs_list
 
     @staticmethod
-    def compute_ppl(log_probs):
+    def compute_ppl(log_probs: List[float]) -> float:
         ppl = np.exp(-np.mean(log_probs))
         return ppl
 
-    def ppl(self, question, answers):
+    def ppl(self, question: str, answers: List[str]) -> List[float]:
         question_prompt = self.assemble_prompt(question, [])
         log_probs_list = self.call_score(question_prompt, answers)
         ppl_list = [self.compute_ppl(log_probs) for log_probs in log_probs_list]
         return ppl_list
     
     @staticmethod
-    def get_best(ppl_list):
+    def get_best(ppl_list: List[float]) -> int:
         best_id = np.argmin(ppl_list)
         return best_id
