@@ -40,6 +40,8 @@ class FastchatMQ(MQConnector):
     Module for processing MQ requests from PyKlatchat to LibreTranslate"""
 
     def __init__(self):
+        self._name = "fastchat"
+
         config = load_config()
         fastchat_config = config.get("FastChat", None)
         self.num_processes = fastchat_config["num_parallel_processes"]
@@ -51,7 +53,6 @@ class FastchatMQ(MQConnector):
         super().__init__(config=mq_config, service_name=self.service_name)
 
         self.vhost = "/llm"
-        self.queue = "fastchat_input"
         for id in range(self.num_processes):
             self.register_consumer(name=f"{self.service_name}_{id}",
                                vhost=self.vhost,
@@ -60,7 +61,6 @@ class FastchatMQ(MQConnector):
                                on_error=self.default_error_handler,
                                auto_ack=False)
 
-        self.queue_score = "fastchat_score_input"
         self.service_name_score = 'neon_llm_fastchat_score'
         self.register_consumer(name=self.service_name_score,
                                vhost=self.vhost,
@@ -69,7 +69,6 @@ class FastchatMQ(MQConnector):
                                on_error=self.default_error_handler,
                                auto_ack=False)
 
-        self.queue_opinion = "fastchat_discussion_input"
         self.service_name_opinion = 'neon_llm_fastchat_discussion'
         self.register_consumer(name=self.service_name_opinion,
                                vhost=self.vhost,
@@ -77,6 +76,22 @@ class FastchatMQ(MQConnector):
                                callback=self.handle_opinion_request,
                                on_error=self.default_error_handler,
                                auto_ack=False)
+    
+    @property
+    def name(self):
+        return self._name
+    
+    @property
+    def queue(self):
+        return f"{self.name}_input"
+    
+    @property
+    def queue_score(self):
+        return f"{self.name}_score_input"
+    
+    @property
+    def queue_opinion(self):
+        return f"{self.name}_discussion_input"
 
     @create_mq_callback(include_callback_props=('channel', 'method', 'body'))
     def handle_request(self,
