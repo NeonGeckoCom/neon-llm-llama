@@ -93,7 +93,7 @@ class FastChat:
         if not answers:
             return []
         scores = self._ppl(question=question, answers=answers)
-        sorted_items = sorted(zip(range(answers), scores), key=lambda x: x[1])
+        sorted_items = sorted(zip(range(len(answers)), scores), key=lambda x: x[1])
         sorted_items_indexes = [x[0] for x in sorted_items]
         return sorted_items_indexes
 
