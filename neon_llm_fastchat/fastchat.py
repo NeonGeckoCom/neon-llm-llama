@@ -32,6 +32,7 @@ from huggingface_hub import snapshot_download
 import numpy as np
 
 
+# TODO: make LLM interface generic
 class FastChat:
 
     def __init__(self, config):
@@ -81,23 +82,20 @@ class FastChat:
         llm_text_output = self._call_model(prompt)
         return llm_text_output
 
-    def ppl(self, question: str, answers: List[str]) -> List[float]:
+    def get_sorted_answer_indexes(self, question: str, answers: List[str]) -> List[int]:
         """
-            Computes PPL value for the list of provided answers
-            :param question: Question for LLM to response to
-            :param answers: List of provided answers
-            :returns ppl values for each answer
+            Creates sorted list of answer indexes with respect to order provided in :param answers based on PPL score
+            Answers are sorted from best to worst
+            :param question: incoming question
+            :param answers: list of answers to rank
+            :returns list of indexes
         """
-        question_prompt = self._assemble_prompt(question, [])
-        log_probs_list = self._call_score(question_prompt, answers)
-        ppl_list = [self._compute_ppl(log_probs) for log_probs in log_probs_list]
-        return ppl_list
-
-    @staticmethod
-    def get_best(ppl_list: List[float]) -> int:
-        """ Returns id of the minimal ppl value """
-        best_id = np.argmin(ppl_list)
-        return best_id
+        if not answers:
+            return []
+        scores = self._ppl(question=question, answers=answers)
+        sorted_items = sorted(zip(range(answers), scores), key=lambda x: x[1])
+        sorted_items_indexes = [x[0] for x in sorted_items]
+        return sorted_items_indexes
 
     def _call_model(self, prompt: str) -> str:
         """
@@ -171,6 +169,18 @@ class FastChat:
     def _tokenize(self, prompt: str) -> List[str]:
         tokens = self.tokenizer.convert_ids_to_tokens(self.tokenizer.encode(prompt))
         return tokens
+
+    def _ppl(self, question: str, answers: List[str]) -> List[float]:
+        """
+            Computes PPL value for the list of provided answers
+            :param question: Question for LLM to response to
+            :param answers: List of provided answers
+            :returns ppl values for each answer
+        """
+        question_prompt = self._assemble_prompt(question, [])
+        log_probs_list = self._call_score(question_prompt, answers)
+        ppl_list = [self._compute_ppl(log_probs) for log_probs in log_probs_list]
+        return ppl_list
 
     @staticmethod
     def _compute_ppl(log_probs: List[float]) -> float:

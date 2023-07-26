@@ -23,11 +23,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-import pika
-
 from neon_mq_connector.connector import MQConnector
-from neon_mq_connector.utils.network_utils import dict_to_b64
 from neon_mq_connector.utils.rabbit_utils import create_mq_callback
 from ovos_utils.log import LOG
 
@@ -35,54 +31,51 @@ from neon_llm_fastchat.fastchat import FastChat
 from neon_llm_fastchat.config import load_config
 
 
+# TODO: make LLM MQ interface generic
 class FastchatMQ(MQConnector):
     """
-    Module for processing MQ requests from PyKlatchat to LibreTranslate"""
+        Module for processing MQ requests to Fast Chat LLM
+    """
 
     def __init__(self):
-        self._name = "fastchat"
+        self.service_name = f'neon_llm_{self.name}'
+        self.vhost = "/llm"
 
-        config = load_config()
-        fastchat_config = config.get("FastChat", None)
-        self.num_processes = fastchat_config["num_parallel_processes"]
-        self.fastChat = FastChat(fastchat_config)
-
-        self.service_name = 'neon_llm_fastchat'
-
-        mq_config = config.get("MQ", None)
+        self.ovos_config = load_config()
+        mq_config = self.ovos_config.get("MQ", None)
         super().__init__(config=mq_config, service_name=self.service_name)
 
-        self.vhost = "/llm"
-        for id in range(self.num_processes):
-            self.register_consumer(name=f"{self.service_name}_{id}",
-                               vhost=self.vhost,
-                               queue=self.queue,
-                               callback=self.handle_request,
-                               on_error=self.default_error_handler,
-                               auto_ack=False)
+        self.register_consumers()
+        self._model = None
 
-        self.service_name_score = 'neon_llm_fastchat_score'
-        self.register_consumer(name=self.service_name_score,
+    def register_consumers(self):
+        for idx in range(self.model_config["num_parallel_processes"]):
+            self.register_consumer(name=f"neon_llm_{self.service_name}_ask_{idx}",
+                                   vhost=self.vhost,
+                                   queue=self.queue_ask,
+                                   callback=self.handle_request,
+                                   on_error=self.default_error_handler,)
+        self.register_consumer(name=f'neon_llm_{self.name}_score',
                                vhost=self.vhost,
                                queue=self.queue_score,
                                callback=self.handle_score_request,
-                               on_error=self.default_error_handler,
-                               auto_ack=False)
-
-        self.service_name_opinion = 'neon_llm_fastchat_discussion'
-        self.register_consumer(name=self.service_name_opinion,
+                               on_error=self.default_error_handler,)
+        self.register_consumer(name=f'neon_llm_{self.name}_discussion',
                                vhost=self.vhost,
                                queue=self.queue_opinion,
                                callback=self.handle_opinion_request,
-                               on_error=self.default_error_handler,
-                               auto_ack=False)
+                               on_error=self.default_error_handler,)
     
     @property
     def name(self):
-        return self._name
+        return "fastchat"
+
+    @property
+    def model_config(self):
+        return self.ovos_config.get(f"LLM_{self.name.upper()}", None)
     
     @property
-    def queue(self):
+    def queue_ask(self):
         return f"{self.name}_input"
     
     @property
@@ -93,18 +86,17 @@ class FastchatMQ(MQConnector):
     def queue_opinion(self):
         return f"{self.name}_discussion_input"
 
-    @create_mq_callback(include_callback_props=('channel', 'method', 'body'))
-    def handle_request(self,
-                       channel: pika.channel.Channel,
-                       method: pika.spec.Basic.Return,
-                       body: dict):
-        """
-        Handles requests from MQ to FastChat received on queue
-        "request_fastchat"
+    @property
+    def model(self):
+        if self._model is None:
+            self._model = FastChat(self.model_config)
+        return self._model
 
-        :param channel: MQ channel object (pika.channel.Channel)
-        :param method: MQ return method (pika.spec.Basic.Return)
-        :param body: request body (dict)
+    @create_mq_callback()
+    def handle_request(self, body: dict):
+        """
+            Handles ask requests from MQ to LLM
+            :param body: request body (dict)
         """
         message_id = body["message_id"]
         routing_key = body["routing_key"]
@@ -112,33 +104,21 @@ class FastchatMQ(MQConnector):
         query = body["query"]
         history = body["history"]
 
-        response = self.fastChat.ask(message=query, chat_history=history)
+        response = self.model.ask(message=query, chat_history=history)
 
         api_response = {
             "message_id": message_id,
             "response": response
         }
+        self.send_message(request_data=api_response,
+                          queue=routing_key)
+        LOG.info(f"Handled ask request for message_id={message_id}")
 
-        channel.basic_publish(exchange='',
-                              routing_key=routing_key,
-                              body=dict_to_b64(api_response),
-                              properties=pika.BasicProperties(
-                                  expiration=str(1000)))
-        channel.basic_ack(method.delivery_tag)
-        LOG.info(f"Handled request: {message_id}")
-
-    @create_mq_callback(include_callback_props=('channel', 'method', 'body'))
-    def handle_score_request(self,
-                       channel: pika.channel.Channel,
-                       method: pika.spec.Basic.Return,
-                       body: dict):
+    @create_mq_callback()
+    def handle_score_request(self, body: dict):
         """
-        Handles score requests from MQ to FastChat received on queue
-        "request_fastchat"
-
-        :param channel: MQ channel object (pika.channel.Channel)
-        :param method: MQ return method (pika.spec.Basic.Return)
-        :param body: request body (dict)
+            Handles score requests from MQ to LLM
+            :param body: request body (dict)
         """
         message_id = body["message_id"]
         routing_key = body["routing_key"]
@@ -146,39 +126,24 @@ class FastchatMQ(MQConnector):
         query = body["query"]
         responses = body["responses"]
 
-        if (len(responses) == 0):
-            ppl_scores = []
-            best_id = None
+        if not responses:
+            sorted_answer_indexes = []
         else:
-            ppl_scores = self.fastChat.ppl(question=query, answers=responses)
-            best_id = self.fastChat.get_best(ppl_scores)
+            sorted_answer_indexes = self.model.get_sorted_answer_indexes(question=query, answers=responses)
 
         api_response = {
             "message_id": message_id,
-            "ppl_scores": ppl_scores,
-            "best": best_id
+            "sorted_answer_indexes": sorted_answer_indexes
         }
+        self.send_message(request_data=api_response,
+                          queue=routing_key)
+        LOG.info(f"Handled score request for message_id={message_id}")
 
-        channel.basic_publish(exchange='',
-                              routing_key=routing_key,
-                              body=dict_to_b64(api_response),
-                              properties=pika.BasicProperties(
-                                  expiration=str(1000)))
-        channel.basic_ack(method.delivery_tag)
-        LOG.info(f"Handled score request: {message_id}")
-
-    @create_mq_callback(include_callback_props=('channel', 'method', 'body'))
-    def handle_opinion_request(self,
-                       channel: pika.channel.Channel,
-                       method: pika.spec.Basic.Return,
-                       body: dict):
+    @create_mq_callback()
+    def handle_opinion_request(self, body: dict):
         """
-        Handles opinion requests from MQ to FastChat received on queue
-        "request_fastchat"
-
-        :param channel: MQ channel object (pika.channel.Channel)
-        :param method: MQ return method (pika.spec.Basic.Return)
-        :param body: request body (dict)
+            Handles opinion requests from MQ to LLM
+            :param body: request body (dict)
         """
         message_id = body["message_id"]
         routing_key = body["routing_key"]
@@ -187,27 +152,26 @@ class FastchatMQ(MQConnector):
         options = body["options"]
         responses = list(options.values())
 
-        if (len(responses) == 0):
-            opinion = ""
+        if not responses:
+            opinion = "Sorry, but I got no options to choose from."
         else:
-            ppl_scores = self.fastChat.ppl(question=query, answers=responses)
-            best_id = self.fastChat.get_best(ppl_scores)
-
-            bot_name, best_responce = list(options.items())[best_id]
-
-            prompt = f'Why Answer "{best_responce}" to the Question "{query}" generated by Bot named "{bot_name}" is good?'
-
-            opinion = self.fastChat.ask(message=prompt, chat_history=[])
+            sorted_answer_indexes = self.model.get_sorted_answer_indexes(question=query, answers=responses)
+            best_respondent_nick, best_responce = list(options.items())[sorted_answer_indexes[0]]
+            opinion = self._ask_model_for_opinion(respondent_nick=best_respondent_nick,
+                                                  question=query,
+                                                  answer=best_responce)
 
         api_response = {
             "message_id": message_id,
             "opinion": opinion
         }
 
-        channel.basic_publish(exchange='',
-                              routing_key=routing_key,
-                              body=dict_to_b64(api_response),
-                              properties=pika.BasicProperties(
-                                  expiration=str(1000)))
-        channel.basic_ack(method.delivery_tag)
-        LOG.info(f"Handled request: {message_id}")
+        self.send_message(request_data=api_response,
+                          queue=routing_key)
+        LOG.info(f"Handled ask request for message_id={message_id}")
+
+    def _ask_model_for_opinion(self, respondent_nick: str, question: str, answer: str) -> str:
+        prompt = f'Why Answer "{answer}" to the Question "{question}" generated by Bot named "{respondent_nick}" is good?'
+        opinion = self.model.ask(message=prompt, chat_history=[])
+        LOG.info(f'Received LLM opinion={opinion}, prompt={prompt}')
+        return opinion
