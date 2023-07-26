@@ -39,11 +39,11 @@ class FastchatMQ(MQConnector):
 
     def __init__(self):
         self.service_name = f'neon_llm_{self.name}'
-        self.vhost = "/llm"
 
         self.ovos_config = load_config()
         mq_config = self.ovos_config.get("MQ", None)
         super().__init__(config=mq_config, service_name=self.service_name)
+        self.vhost = "/llm"
 
         self.register_consumers()
         self._model = None
