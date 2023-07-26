@@ -104,8 +104,11 @@ class FastchatMQ(MQConnector):
         query = body["query"]
         history = body["history"]
 
-        response = self.model.ask(message=query, chat_history=history)
-
+        try:
+            response = self.model.ask(message=query, chat_history=history)
+        except ValueError as err:
+            LOG.error(f'ValueError={err}')
+            response = 'Sorry, but I cannot respond to your message at the moment, please try again later'
         api_response = {
             "message_id": message_id,
             "response": response
@@ -129,8 +132,11 @@ class FastchatMQ(MQConnector):
         if not responses:
             sorted_answer_indexes = []
         else:
-            sorted_answer_indexes = self.model.get_sorted_answer_indexes(question=query, answers=responses)
-
+            try:
+                sorted_answer_indexes = self.model.get_sorted_answer_indexes(question=query, answers=responses)
+            except ValueError as err:
+                LOG.error(f'ValueError={err}')
+                sorted_answer_indexes = []
         api_response = {
             "message_id": message_id,
             "sorted_answer_indexes": sorted_answer_indexes
@@ -155,11 +161,15 @@ class FastchatMQ(MQConnector):
         if not responses:
             opinion = "Sorry, but I got no options to choose from."
         else:
-            sorted_answer_indexes = self.model.get_sorted_answer_indexes(question=query, answers=responses)
-            best_respondent_nick, best_responce = list(options.items())[sorted_answer_indexes[0]]
-            opinion = self._ask_model_for_opinion(respondent_nick=best_respondent_nick,
-                                                  question=query,
-                                                  answer=best_responce)
+            try:
+                sorted_answer_indexes = self.model.get_sorted_answer_indexes(question=query, answers=responses)
+                best_respondent_nick, best_responce = list(options.items())[sorted_answer_indexes[0]]
+                opinion = self._ask_model_for_opinion(respondent_nick=best_respondent_nick,
+                                                      question=query,
+                                                      answer=best_responce)
+            except ValueError as err:
+                LOG.error(f'ValueError={err}')
+                opinion = "Sorry, but I experienced an issue trying to make up an opinion on this topic"
 
         api_response = {
             "message_id": message_id,
