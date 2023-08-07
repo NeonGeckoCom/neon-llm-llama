@@ -23,25 +23,28 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-from typing import List
-
 import ctranslate2
-from transformers import T5Tokenizer
-from huggingface_hub import snapshot_download
 import numpy as np
 
+from typing import List
+from transformers import T5Tokenizer
+from huggingface_hub import snapshot_download
+from neon_llm_core.llm import NeonLLM
 
-# TODO: make LLM interface generic
-class FastChat:
+
+class FastChat(NeonLLM):
+
+    mq_to_llm_role = {
+        "user": "Human",
+        "llm": "Assistant"
+    }
 
     def __init__(self, config):
+        super().__init__(config)
         self.context_depth = config["context_depth"]
         self.max_tokens = config["max_tokens"]
         self.num_parallel_processes = config["num_parallel_processes"]
         self.num_threads_per_process = config["num_threads_per_process"]
-        self._tokenizer = None
-        self._model = None
 
     @property
     def tokenizer(self) -> T5Tokenizer:
@@ -75,12 +78,6 @@ class FastChat:
                "replenished naturally in a relatively short amount of time, such as solar, wind, hydro, " \
                "geothermal, and biomass. Non-renewable energy sources, on the other hand, " \
                "are finite and will eventually be depleted, such as coal, oil, and natural gas.\n"
-
-    def ask(self, message: str, chat_history: List[List[str]]) -> str:
-        """ Generates llm response based on user message and (user, llm) chat history """
-        prompt = self._assemble_prompt(message, chat_history)
-        llm_text_output = self._call_model(prompt)
-        return llm_text_output
 
     def get_sorted_answer_indexes(self, question: str, answers: List[str]) -> List[int]:
         """
@@ -130,21 +127,10 @@ class FastChat:
         prompt = self._system_prompt
         # Context N messages
         for role, content in chat_history[-self.context_depth:]:
-            role_fastchat = self._convert_role(role)
+            role_fastchat = self.convert_role(role)
             prompt += f"### {role_fastchat}: {content}\n"
         prompt += f"### Human: {message}\n### Assistant:"
         return prompt
-
-    @staticmethod
-    def _convert_role(role: str) -> str:
-        """ Maps MQ role to FastChat internal domain """
-        if role == "user":
-            role_fastchat = "Human"
-        elif role == "llm":
-            role_fastchat = "Assistant"
-        else:
-            raise ValueError(f"role={role} is undefined, supported are: ('user', 'llm')")
-        return role_fastchat
 
     def _call_score(self, prompt: str, targets: List[str]) -> List[List[float]]:
         """
