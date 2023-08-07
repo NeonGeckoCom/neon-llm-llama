@@ -28,8 +28,7 @@ MQ:
     neon_llm_fastchat:
       password: <neon_fastchat user's password>
       user: neon_fastchat
-FastChat:
-  model: "fastchat"
+LLM_FASTCHAT:
   context_depth: 3
   max_tokens: 256
   num_parallel_processes: 2
