@@ -3,4 +3,4 @@ ctranslate2
 transformers
 SentencePiece
 # networking
-neon_llm_core @ git+https://github.com/NeonGeckoCom/neon-llm-core
+neon_llm_core
