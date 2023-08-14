@@ -14,7 +14,7 @@ MQ:
     mq_handler:
       user: neon_api_utils
       password: Klatchat2021
-FastChat:
+LLM_FASTCHAT:
   model: "fastchat"
   context_depth: 3
   max_tokens: 256
