@@ -41,6 +41,7 @@ class FastChat(NeonLLM):
 
     def __init__(self, config):
         super().__init__(config)
+        self.warmup()
         self.context_depth = config["context_depth"]
         self.max_tokens = config["max_tokens"]
         self.num_parallel_processes = config["num_parallel_processes"]
@@ -79,6 +80,10 @@ class FastChat(NeonLLM):
                "replenished naturally in a relatively short amount of time, such as solar, wind, hydro, " \
                "geothermal, and biomass. Non-renewable energy sources, on the other hand, " \
                "are finite and will eventually be depleted, such as coal, oil, and natural gas.\n"
+
+    def warmup(self):
+        self.tokenizer
+        self.model
 
     def get_sorted_answer_indexes(self, question: str, answers: List[str]) -> List[int]:
         """
