@@ -56,9 +56,7 @@ sudo systemctl restart docker
 ```
 
 Run docker
-```
 ```shell
 export CONFIG_PATH="/home/${USER}/.config"
 docker run --gpus 0 -v ${CONFIG_PATH}:/config neon_llm_fastchat
-```
 ```
