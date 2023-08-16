@@ -32,7 +32,11 @@ class FastchatMQ(NeonLLMMQConnector):
     """
         Module for processing MQ requests to Fast Chat LLM
     """
-    
+
+    def __init__(self):
+        super().__init__()
+        self.warmup()
+
     @property
     def name(self):
         return "fastchat"
@@ -42,6 +46,9 @@ class FastchatMQ(NeonLLMMQConnector):
         if self._model is None:
             self._model = FastChat(self.model_config)
         return self._model
+
+    def warmup(self):
+        self.model
 
     @staticmethod
     def compose_opinion_prompt(respondent_nick: str, question: str, answer: str) -> str:

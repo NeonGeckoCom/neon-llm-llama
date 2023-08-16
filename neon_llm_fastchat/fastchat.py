@@ -41,11 +41,11 @@ class FastChat(NeonLLM):
 
     def __init__(self, config):
         super().__init__(config)
-        self.warmup()
         self.context_depth = config["context_depth"]
         self.max_tokens = config["max_tokens"]
         self.num_parallel_processes = config["num_parallel_processes"]
         self.num_threads_per_process = config["num_threads_per_process"]
+        self.warmup()
 
     @property
     def tokenizer(self) -> T5Tokenizer:
