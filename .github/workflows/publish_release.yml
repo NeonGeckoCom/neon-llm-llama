@@ -24,7 +24,7 @@ jobs:
     uses: neongeckocom/.github/.github/workflows/publish_docker.yml@FEAT_SupportDockerfileSpec
     secrets: inherit
 
-  build_and_publish_docker:
+  build_and_publish_docker_gpu:
     uses: neongeckocom/.github/.github/workflows/publish_docker.yml@FEAT_SupportDockerfileSpec
     secrets: inherit
     with:
