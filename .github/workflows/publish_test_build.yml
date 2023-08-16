@@ -18,5 +18,5 @@ jobs:
       publish_pypi: false
   build_and_publish_docker:
     needs: publish_alpha_release
-    uses: neongeckocom/.github/.github/workflows/publish_docker.yml@master
+    uses: neongeckocom/.github/.github/workflows/publish_docker.yml@FEAT_SupportDockerfileSpec
     secrets: inherit

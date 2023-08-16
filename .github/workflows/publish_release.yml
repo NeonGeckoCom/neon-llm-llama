@@ -21,5 +21,5 @@ jobs:
           tag: ${{env.VERSION}}
 
   build_and_publish_docker:
-    uses: neongeckocom/.github/.github/workflows/publish_docker.yml@master
+    uses: neongeckocom/.github/.github/workflows/publish_docker.yml@FEAT_SupportDockerfileSpec
     secrets: inherit
