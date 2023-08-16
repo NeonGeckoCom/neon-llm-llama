@@ -61,6 +61,7 @@ class FastChat(NeonLLM):
         if self._model is None:
             repo_path = snapshot_download(repo_id=self.llm_model_name)
             self._model = ctranslate2.Translator(model_path=repo_path,
+                                                 device="auto",
                                                  intra_threads=self.num_threads_per_process,
                                                  inter_threads=self.num_parallel_processes)
         return self._model
