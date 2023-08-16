@@ -1,0 +1,15 @@
+FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
+
+LABEL vendor=neon.ai \
+    ai.neon.name="neon-llm-fastchat"
+
+ENV OVOS_CONFIG_BASE_FOLDER neon
+ENV OVOS_CONFIG_FILENAME diana.yaml
+ENV XDG_CONFIG_HOME /config
+COPY docker_overlay/ /
+
+WORKDIR /app
+COPY . /app
+RUN pip install /app
+
+CMD [ "neon-llm-fastchat" ]
