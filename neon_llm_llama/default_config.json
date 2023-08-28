@@ -3,14 +3,14 @@
         "server": "localhost",
         "port": "5672",
         "users": {
-            "neon_llm_fastchat": {
+            "neon_llm_llama": {
                 "user": "",
                 "password": ""
             }
         }
     },
-    "FastChat": {
-        "model": "fastchat",
+    "Llama": {
+        "model": "llama",
         "context_depth": 3,
         "max_tokens": 256,
         "num_parallel_processes": 2,
