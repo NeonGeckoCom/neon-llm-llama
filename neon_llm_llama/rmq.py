@@ -25,10 +25,10 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from neon_llm_core.rmq import NeonLLMMQConnector
 
-from neon_llm_llama.llama import FastChat
+from neon_llm_llama.llama import Llama
 
 
-class FastchatMQ(NeonLLMMQConnector):
+class LlamaMQ(NeonLLMMQConnector):
     """
         Module for processing MQ requests to Fast Chat LLM
     """
@@ -39,12 +39,12 @@ class FastchatMQ(NeonLLMMQConnector):
 
     @property
     def name(self):
-        return "fastchat"
+        return "llama"
 
     @property
     def model(self):
         if self._model is None:
-            self._model = FastChat(self.model_config)
+            self._model = Llama(self.model_config)
         return self._model
 
     def warmup(self):
