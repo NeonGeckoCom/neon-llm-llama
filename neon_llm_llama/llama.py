@@ -142,17 +142,18 @@ class Llama(NeonLLM):
             :param targets: Output text sequences
             :returns: List of calculated logarithmic probabilities per output text sequence
         """
-        tokens = self._tokenize(prompt)
-        tokens_list = len(targets) * [tokens]
+        prompt_len = len(self._tokenize(prompt))
 
-        target_tokens_list = [self._tokenize(target) for target in targets]
+        tokens_list = [
+            self._tokenize(f"{prompt} {target}</s>")
+            for target in targets
+        ]
 
         results = self.model.score_batch(
-            source=tokens_list,
-            target=target_tokens_list,
+            tokens=tokens_list
         )
 
-        log_probs_list = [result.log_probs for result in results]
+        log_probs_list = [result.log_probs[prompt_len-1:] for result in results]
         return log_probs_list
 
     def _tokenize(self, prompt: str) -> List[str]:
