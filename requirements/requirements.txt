@@ -1,6 +1,5 @@
 # model
 ctranslate2
-transformers
-SentencePiece
+tokenizers
 # networking
 neon_llm_core
