@@ -55,7 +55,7 @@ class Llama(NeonLLM):
 
     @property
     def tokenizer_model_name(self) -> str:
-        return "google/flan-t5-xl"
+        return "neongeckocom/Llama-2-7b-chat-hf"
 
     @property
     def model(self) -> ctranslate2.Translator:
@@ -69,7 +69,7 @@ class Llama(NeonLLM):
 
     @property
     def llm_model_name(self) -> str:
-        return "neongeckocom/fastchat-t5-3b-v1.0"
+        return "neongeckocom/Llama-2-7b-chat-hf"
 
     @property
     def _system_prompt(self) -> str:
