@@ -27,7 +27,7 @@ import ctranslate2
 import numpy as np
 
 from typing import List
-from transformers import T5Tokenizer
+from tokenizers import Tokenizer
 from huggingface_hub import snapshot_download
 from neon_llm_core.llm import NeonLLM
 
@@ -35,8 +35,8 @@ from neon_llm_core.llm import NeonLLM
 class Llama(NeonLLM):
 
     mq_to_llm_role = {
-        "user": "Human",
-        "llm": "Assistant"
+        "user": "[/INST]",
+        "llm": "</s><s>[INST]"
     }
 
     def __init__(self, config):
@@ -48,9 +48,9 @@ class Llama(NeonLLM):
         self.warmup()
 
     @property
-    def tokenizer(self) -> T5Tokenizer:
+    def tokenizer(self) -> Tokenizer:
         if self._tokenizer is None:
-            self._tokenizer = T5Tokenizer.from_pretrained(pretrained_model_name_or_path=self.tokenizer_model_name)
+            self._tokenizer = Tokenizer.from_pretrained(identifier=self.tokenizer_model_name)
         return self._tokenizer
 
     @property
@@ -58,10 +58,10 @@ class Llama(NeonLLM):
         return "neongeckocom/Llama-2-7b-chat-hf"
 
     @property
-    def model(self) -> ctranslate2.Translator:
+    def model(self) -> ctranslate2.Generator:
         if self._model is None:
             repo_path = snapshot_download(repo_id=self.llm_model_name)
-            self._model = ctranslate2.Translator(model_path=repo_path,
+            self._model = ctranslate2.Generator(model_path=repo_path,
                                                  device="auto",
                                                  intra_threads=self.num_threads_per_process,
                                                  inter_threads=self.num_parallel_processes)
@@ -73,13 +73,11 @@ class Llama(NeonLLM):
 
     @property
     def _system_prompt(self) -> str:
-        return "A chat between a curious human and an artificial intelligence assistant. " \
-               "The assistant gives helpful, detailed, and polite answers to the human's questions.\n" \
-               "### Human: What are the key differences between renewable and non-renewable energy sources?\n" \
-               "### Assistant: Renewable energy sources are those that can be " \
-               "replenished naturally in a relatively short amount of time, such as solar, wind, hydro, " \
-               "geothermal, and biomass. Non-renewable energy sources, on the other hand, " \
-               "are finite and will eventually be depleted, such as coal, oil, and natural gas.\n"
+        return ("<s>[INST] <<SYS>>\nYou are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. "
+        "Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. "
+        "Please ensure that your responses are socially unbiased and positive in nature.\n\n"
+        "If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. "
+        "If you don't know the answer to a question, please don't share false information.\n<</SYS>>\n\n")
 
     def warmup(self):
         self.tokenizer
@@ -108,16 +106,15 @@ class Llama(NeonLLM):
         """
         tokens = self._tokenize(prompt)
 
-        results = self.model.translate_batch(
+        results = self.model.generate_batch(
             [tokens],
-            beam_size=1,
-            max_decoding_length=self.max_tokens,
+            include_prompt_in_result=False,
+            max_length=self.max_tokens,
             repetition_penalty=1.2,
         )
 
-        output_tokens = results[0].hypotheses[0]
-        text = self.tokenizer.decode(self.tokenizer.convert_tokens_to_ids(output_tokens),
-                                     spaces_between_special_tokens=False)
+        output_tokens = results[0].sequences_ids[0]
+        text = self.tokenizer.decode(output_tokens)
         return text
 
     def _assemble_prompt(self, message: str, chat_history: List[List[str]]) -> str:
@@ -134,8 +131,8 @@ class Llama(NeonLLM):
         # Context N messages
         for role, content in chat_history[-self.context_depth:]:
             role_llama = self.convert_role(role)
-            prompt += f"### {role_llama}: {content}\n"
-        prompt += f"### Human: {message}\n### Assistant:"
+            prompt += f"{content} {role_llama} "
+        prompt += f"{message} {self.mq_to_llm_role['user']}"
         return prompt
 
     def _call_score(self, prompt: str, targets: List[str]) -> List[List[float]]:
@@ -159,7 +156,7 @@ class Llama(NeonLLM):
         return log_probs_list
 
     def _tokenize(self, prompt: str) -> List[str]:
-        tokens = self.tokenizer.convert_ids_to_tokens(self.tokenizer.encode(prompt))
+        tokens = self.tokenizer.encode(prompt).tokens
         return tokens
 
     def _ppl(self, question: str, answers: List[str]) -> List[float]:
