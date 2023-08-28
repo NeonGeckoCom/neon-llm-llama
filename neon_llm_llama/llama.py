@@ -115,7 +115,13 @@ class Llama(NeonLLM):
 
         output_tokens = results[0].sequences_ids[0]
         text = self.tokenizer.decode(output_tokens)
+        text = self._clean_responce(text)
         return text
+
+    @staticmethod
+    def _clean_responce(text: str) -> str:
+        clean_text = text.strip()
+        return clean_text
 
     def _assemble_prompt(self, message: str, chat_history: List[List[str]]) -> str:
         """
