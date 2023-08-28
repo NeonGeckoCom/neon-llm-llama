@@ -1,5 +1,5 @@
-# NeonAI LLM FastChat
-Proxies API calls to FastChat.
+# NeonAI LLM Llama
+Proxies API calls to Llama.
 
 ## Request Format
 API requests should include `history`, a list of tuples of strings, and the current
@@ -25,10 +25,10 @@ MQ:
   port: <MQ Port>
   server: <MQ Hostname or IP>
   users:
-    neon_llm_fastchat:
-      password: <neon_fastchat user's password>
-      user: neon_fastchat
-LLM_FASTCHAT:
+    neon_llm_llama:
+      password: <neon_llama user's password>
+      user: neon_llama
+LLM_LLAMA:
   context_depth: 3
   max_tokens: 256
   num_parallel_processes: 2
@@ -38,7 +38,7 @@ LLM_FASTCHAT:
 For example, if your configuration resides in `~/.config`:
 ```shell
 export CONFIG_PATH="/home/${USER}/.config"
-docker run -v ${CONFIG_PATH}:/config neon_llm_fastchat
+docker run -v ${CONFIG_PATH}:/config neon_llm_llama
 ```
 > Note: If connecting to a local MQ server, you may need to specify `--network host`
 
@@ -58,5 +58,5 @@ sudo systemctl restart docker
 Run docker
 ```shell
 export CONFIG_PATH="/home/${USER}/.config"
-docker run --gpus 0 -v ${CONFIG_PATH}:/config neon_llm_fastchat
+docker run --gpus 0 -v ${CONFIG_PATH}:/config neon_llm_llama
 ```
