@@ -25,7 +25,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from neon_llm_core.rmq import NeonLLMMQConnector
 
-from neon_llm_fastchat.fastchat import FastChat
+from neon_llm_llama.llama import FastChat
 
 
 class FastchatMQ(NeonLLMMQConnector):
