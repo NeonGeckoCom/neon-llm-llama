@@ -24,15 +24,15 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from neon_llm_fastchat.rmq import FastchatMQ
+from neon_llm_llama.rmq import LlamaMQ
 
 
 def main():
     # Run RabbitMQ
-    fastchatMQ = FastchatMQ()
-    fastchatMQ.run(run_sync=False, run_consumers=True,
+    llamaMQ = LlamaMQ()
+    llamaMQ.run(run_sync=False, run_consumers=True,
                   daemonize_consumers=True)
-    fastchatMQ.observer_thread.join()
+    llamaMQ.observer_thread.join()
 
 
 if __name__ == "__main__":

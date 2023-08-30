@@ -67,12 +67,12 @@ with open(path.join(BASE_PATH, "version.py"), "r", encoding="utf-8") as v:
                 version = line.split("'")[1]
 
 setup(
-    name='neon-llm-fastchat',
+    name='neon-llm-llama',
     version=version,
-    description='LLM service for FastChat',
+    description='LLM service for Llama',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://github.com/NeonGeckoCom/neon-llm-fastchat',
+    url='https://github.com/NeonGeckoCom/neon-llm-llama',
     author='Neongecko',
     author_email='developers@neon.ai',
     license='BSD-3.0',
@@ -85,7 +85,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'neon-llm-fastchat=neon_llm_fastchat.__main__:main'
+            'neon-llm-llama=neon_llm_llama.__main__:main'
         ]
     }
 )
