@@ -1,5 +1,6 @@
 # model
 ctranslate2
 tokenizers
+huggingface_hub
 # networking
-neon_llm_core
+neon_llm_core==0.0.6
